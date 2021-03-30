@@ -203,4 +203,6 @@ const main = async function main(config) {
   // console.log(`### Delete old github script - FINISHED`)
 }
 
-export default main;
+module.exports = {
+  main: config => main(config)
+}
