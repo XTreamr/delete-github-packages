@@ -28,21 +28,26 @@ async function getPackagesOrgOwner(org, package_type, package_name, page) {
   }
 }
 
-async function getAllPackages() {
+async function getAllPackages(config) {
+  if (!config.project_name || !config.package_type || !config.project_owner) {
+    console.log("Invalid config")
+    return
+  }
+
   let pageIndex = 1
   let packages = []
-  const packagesInit = await getPackagesOrgOwner('xtreamr', 'docker', 'go_playlist_v3', 1)
+  const packagesInit = await getPackagesOrgOwner(config.project_owner, config.package_type, config.project_name, 1)
   console.log('GitHub connection ok')
   const lastPage = packagesInit.links.last ? packagesInit.links.last : null
   const lastPageIndex = lastPage ? lastPage.substring(lastPage.length - 1, lastPage.length) : null
   if (!lastPage) {
-    const singlePageRequest = await getPackagesOrgOwner(PROJECT_OWNER, 'docker', PROJECT_NAME, pageIndex.toString())
+    const singlePageRequest = await getPackagesOrgOwner(config.project_owner, config.package_type, config.project_name, pageIndex.toString())
     packages = packages.concat(singlePageRequest.body)
     return packages
   }
 
   while (pageIndex <= lastPageIndex) {
-    let packagesRequest = await getPackagesOrgOwner(PROJECT_OWNER, 'docker', PROJECT_NAME, pageIndex.toString())
+    let packagesRequest = await getPackagesOrgOwner(config.project_owner, config.package_type, config.project_name, pageIndex.toString())
     packages = packages.concat(packagesRequest.body)
     pageIndex++
   }
@@ -121,7 +126,7 @@ async function deletePackage(org, package_type, package_name, id) {
 
     const res = await request
       .delete(`${gitHubAPI}/orgs/${org}/packages/${package_type}/${package_name}/versions/${id}`)
-      .set('User-Agent', 'adriandeka')
+      .set('User-Agent',  GITHUB_API_USERNAME.toString())
       .set('Authorization', 'token ' + GITHUB_API_TOKEN)
       .set('Accept', 'application/vnd.github.v3+json')
     return res
@@ -130,10 +135,15 @@ async function deletePackage(org, package_type, package_name, id) {
   }
 }
 
-async function deleteOrderedPackages(orderedPackages) {
+async function deleteOrderedPackages(orderedPackages, config) {
+  if (!config.project_name || !config.package_type || !config.project_owner) {
+    console.log("Invalid config")
+    return
+  }
+
   console.log(`### Deleting deprecated ${tags.DEV} packages...`)
   for (const devPackage of orderedPackages.DEV) {
-    const result = await deletePackage(PROJECT_OWNER, 'docker', PROJECT_NAME, devPackage.id)
+    const result = await deletePackage(config.project_owner, config.package_type, config.project_name, devPackage.id)
     if (result.status === 204) {
       console.log(`${tags.DEV} Package ${devPackage.id} deleted succesfully`)
     } else {
@@ -143,7 +153,7 @@ async function deleteOrderedPackages(orderedPackages) {
 
   console.log(`### Deleting deprecated ${tags.PRE} packages... `)
   for (const prePackage of orderedPackages.PRE) {
-    const result = await deletePackage(PROJECT_OWNER, 'docker', PROJECT_NAME, prePackage.id)
+    const result = await deletePackage(config.project_owner, config.package_type, config.project_name, prePackage.id)
     if (result.status === 204) {
       console.log(`${tags.PRE} Package ${prePackage.id} deleted succesfully`)
     } else {
@@ -153,7 +163,7 @@ async function deleteOrderedPackages(orderedPackages) {
 
   console.log(`### Deleting deprecated ${tags.LATEST} packages...`)
   for (const latestPackage of orderedPackages.LATEST) {
-    const result = await deletePackage(PROJECT_OWNER, 'docker', PROJECT_NAME, latestPackage.id)
+    const result = await deletePackage(config.project_owner, config.package_type, config.project_name, latestPackage.id)
     if (result.status === 204) {
       console.log(`${tags.LATEST} Package ${latestPackage.id} deleted succesfully`)
     } else {
@@ -163,7 +173,7 @@ async function deleteOrderedPackages(orderedPackages) {
 
   console.log(`### Deleting deprecated ${tags.NO_TAG} packages...`)
   for (const noTagPackage of orderedPackages.NO_TAG) {
-    const result = await deletePackage(PROJECT_OWNER, 'docker', PROJECT_NAME, noTagPackage.id)
+    const result = await deletePackage(config.project_owner, config.package_type, config.project_name, noTagPackage.id)
     if (result.status === 204) {
       console.log(`${tags.NO_TAG} Package ${noTagPackage.id} deleted succesfully`)
     } else {
@@ -172,35 +182,32 @@ async function deleteOrderedPackages(orderedPackages) {
   }
 }
 
-function validateEnv(){
+function notValidEnv() {
   return !GITHUB_API_TOKEN || !GITHUB_API_USERNAME
 }
 
 const main = async function main(config) {
-  if (!config) {
+  if (!config || !config['deleteGithubPackageOptions']) {
     console.log("config not defined")
     return
   }
 
-  console.log(config)
-
-  const envValidation = validateEnv()
-  if (!envValidation) {
-    // throw new Error('Error: Check ENV variables (GITHUB_API_TOKEN, GITHUB_API_USERNAME) are defined')
+  if (notValidEnv()) {
     console.log('Error: Check ENV variables (GITHUB_API_TOKEN, GITHUB_API_USERNAME) are defined')
     return
   }
 
-  // console.log(`### Delete old github script - START`)
-  // const packages = await getAllPackages()
-  // console.log(`### Total packages: ${packages.length}`)
-  // const sortedPackages = sortByUpdateDate(packages)
-  // console.log(`### Sort packages by update date done`)
-  // const packagesToDelete = getPackagesToDelete(sortedPackages)
-  // const totalsToDelete = getTotalPackageToDelete(packagesToDelete)
-  // console.log(`### Total Packages to delete: ${totalsToDelete}`)
-  // await deleteOrderedPackages(packagesToDelete)
-  // console.log(`### Delete old github script - FINISHED`)
+
+  console.log(`### Delete old github script - START`)
+  const packages = await getAllPackages(config['deleteGithubPackageOptions'])
+  console.log(`### Total packages: ${packages.length}`)
+  const sortedPackages = sortByUpdateDate(packages)
+  console.log(`### Sort packages by update date done`)
+  const packagesToDelete = getPackagesToDelete(sortedPackages)
+  const totalsToDelete = getTotalPackageToDelete(packagesToDelete)
+  console.log(`### Total Packages to delete: ${totalsToDelete}`)
+  await deleteOrderedPackages(packagesToDelete, config['deleteGithubPackageOptions'])
+  console.log(`### Delete old github script - FINISHED`)
 }
 
 module.exports = {
