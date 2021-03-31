@@ -1,0 +1,26 @@
+{
+  "name": "@xtreamr/delete-github-packages",
+  "version": "1.1.1",
+  "description": "Delete (old) github repo packages",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/XTreamr/delete-github-packages.git"
+  },
+  "dependencies": {
+    "superagent": "^6.1.0"
+  },
+  "keywords": [],
+  "author": "Xtreamr",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/XTreamr/delete-github-packages/issues"
+  },
+  "homepage": "https://github.com/XTreamr/delete-github-packages#readme",
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com/"
+  }
+}
