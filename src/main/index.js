@@ -1,7 +1,7 @@
 'use strict'
 
-const GITHUB_API_TOKEN = process.env.GITHUB_API_TOKEN
-const GITHUB_API_USERNAME = process.env.GITHUB_API_USERNAME
+const GH_API_TOKEN = process.env.GH_API_TOKEN
+const GH_API_USERNAME = process.env.GH_API_USERNAME
 const request = require('superagent')
 const gitHubAPI = 'https://api.github.com'
 const tags = {
@@ -19,8 +19,8 @@ async function getPackagesOrgOwner(org, package_type, package_name, page) {
 
     const res = await request
       .get(`${gitHubAPI}/orgs/${org}/packages/${package_type}/${package_name}/versions?per_page=100&page=${page}`)
-      .set('User-Agent', GITHUB_API_USERNAME.toString())
-      .set('Authorization', 'token ' + GITHUB_API_TOKEN)
+      .set('User-Agent', GH_API_USERNAME.toString())
+      .set('Authorization', 'token ' + GH_API_TOKEN)
       .set('Accept', 'application/vnd.github.v3+json')
     return res
   } catch (err) {
@@ -126,8 +126,8 @@ async function deletePackage(org, package_type, package_name, id) {
 
     const res = await request
       .delete(`${gitHubAPI}/orgs/${org}/packages/${package_type}/${package_name}/versions/${id}`)
-      .set('User-Agent',  GITHUB_API_USERNAME.toString())
-      .set('Authorization', 'token ' + GITHUB_API_TOKEN)
+      .set('User-Agent',  GH_API_USERNAME.toString())
+      .set('Authorization', 'token ' + GH_API_TOKEN)
       .set('Accept', 'application/vnd.github.v3+json')
     return res
   } catch (err) {
@@ -183,7 +183,7 @@ async function deleteOrderedPackages(orderedPackages, config) {
 }
 
 function notValidEnv() {
-  return !GITHUB_API_TOKEN || !GITHUB_API_USERNAME
+  return !GH_API_TOKEN || !GH_API_USERNAME
 }
 
 const main = async function main(config) {
@@ -193,7 +193,7 @@ const main = async function main(config) {
   }
 
   if (notValidEnv()) {
-    console.log('Error: Check ENV variables (GITHUB_API_TOKEN, GITHUB_API_USERNAME) are defined')
+    console.log('Error: Check ENV variables (GH_API_TOKEN, GH_API_USERNAME) are defined')
     return
   }
 
