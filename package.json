@@ -1,5 +1,5 @@
 {
-  "name": "delete-github-packages",
+  "name": "@xtreamr/delete-github-packages",
   "version": "1.1.0",
   "description": "Delete (old) github repo packages",
   "main": "index.js",
